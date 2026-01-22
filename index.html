@@ -18,11 +18,11 @@
     
     <style>
         :root {
-            --color-buena: #1e3a8a;
-            --color-aceptable: #1e40af;
-            --color-regular: #3b82f6;
-            --color-mala: #94a3b8;
-            --color-muy-mala: #475569;
+            --color-buena: #0066CC;
+            --color-aceptable: #33CC33;
+            --color-regular: #FFCC00;
+            --color-mala: #FF6600;
+            --color-muy-mala: #CC0000;
         }
         
         body {
@@ -538,12 +538,12 @@
         // Función para obtener el color según la categoría
         function getColor(categoria) {
             switch(categoria) {
-                case 'BUENA': return '#1e3a8a';
-                case 'ACEPTABLE': return '#1e40af';
-                case 'REGULAR': return '#3b82f6';
-                case 'MALA': return '#94a3b8';
-                case 'MUY MALA': return '#475569';
-                default: return '#64748b';
+                case 'BUENA': return '#0066CC';
+                case 'ACEPTABLE': return '#33CC33';
+                case 'REGULAR': return '#FFCC00';
+                case 'MALA': return '#FF6600';
+                case 'MUY MALA': return '#CC0000';
+                default: return '#999999';
             }
         }
         
@@ -605,23 +605,23 @@
             div.innerHTML = `
                 <div style="font-weight: bold; margin-bottom: 8px; color: #2c3e50;">Calidad del Agua</div>
                 <div style="display: flex; align-items: center; margin: 3px 0;">
-                    <div style="background: #1e3a8a; width: 18px; height: 18px; border-radius: 50%; margin-right: 8px; border: 2px solid white;"></div>
+                    <div style="background: #0066CC; width: 18px; height: 18px; border-radius: 50%; margin-right: 8px; border: 2px solid white;"></div>
                     <span style="font-size: 12px;">BUENA</span>
                 </div>
                 <div style="display: flex; align-items: center; margin: 3px 0;">
-                    <div style="background: #1e40af; width: 18px; height: 18px; border-radius: 50%; margin-right: 8px; border: 2px solid white;"></div>
+                    <div style="background: #33CC33; width: 18px; height: 18px; border-radius: 50%; margin-right: 8px; border: 2px solid white;"></div>
                     <span style="font-size: 12px;">ACEPTABLE</span>
                 </div>
                 <div style="display: flex; align-items: center; margin: 3px 0;">
-                    <div style="background: #3b82f6; width: 18px; height: 18px; border-radius: 50%; margin-right: 8px; border: 2px solid white;"></div>
+                    <div style="background: #FFCC00; width: 18px; height: 18px; border-radius: 50%; margin-right: 8px; border: 2px solid white;"></div>
                     <span style="font-size: 12px;">REGULAR</span>
                 </div>
                 <div style="display: flex; align-items: center; margin: 3px 0;">
-                    <div style="background: #94a3b8; width: 18px; height: 18px; border-radius: 50%; margin-right: 8px; border: 2px solid white;"></div>
+                    <div style="background: #FF6600; width: 18px; height: 18px; border-radius: 50%; margin-right: 8px; border: 2px solid white;"></div>
                     <span style="font-size: 12px;">MALA</span>
                 </div>
                 <div style="display: flex; align-items: center; margin: 3px 0;">
-                    <div style="background: #475569; width: 18px; height: 18px; border-radius: 50%; margin-right: 8px; border: 2px solid white;"></div>
+                    <div style="background: #CC0000; width: 18px; height: 18px; border-radius: 50%; margin-right: 8px; border: 2px solid white;"></div>
                     <span style="font-size: 12px;">MUY MALA</span>
                 </div>
             `;
@@ -639,11 +639,11 @@
                 datasets: [{
                     data: [14, 11, 8, 23, 1],
                     backgroundColor: [
-                        '#1e3a8a',
-                        '#1e40af',
-                        '#3b82f6',
-                        '#94a3b8',
-                        '#475569'
+                        '#0066CC',
+                        '#33CC33',
+                        '#FFCC00',
+                        '#FF6600',
+                        '#CC0000'
                     ],
                     borderWidth: 2,
                     borderColor: '#fff'
@@ -678,8 +678,8 @@
                 datasets: [{
                     label: 'ICA',
                     data: top10Mejores.map(e => e.ica),
-                    backgroundColor: '#1e3a8a',
-                    borderColor: '#1e293b',
+                    backgroundColor: '#0066CC',
+                    borderColor: '#004499',
                     borderWidth: 1
                 }]
             },
@@ -714,8 +714,8 @@
                 datasets: [{
                     label: 'ICA',
                     data: top10Peores.map(e => e.ica),
-                    backgroundColor: '#475569',
-                    borderColor: '#334155',
+                    backgroundColor: '#CC0000',
+                    borderColor: '#990000',
                     borderWidth: 1
                 }]
             },

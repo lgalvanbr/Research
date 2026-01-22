@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard ICA - Río Bogotá</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <style>
+        :root {
+            --color-buena: #0066CC;
+            --color-aceptable: #33CC33;
+            --color-regular: #FFCC00;
+            --color-mala: #FF6600;
+            --color-muy-mala: #CC0000;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-weight: bold;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .header .subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .badge-buena { background-color: var(--color-buena) !important; }
+        .badge-aceptable { background-color: var(--color-aceptable) !important; }
+        .badge-regular { background-color: var(--color-regular) !important; color: #000 !important; }
+        .badge-mala { background-color: var(--color-mala) !important; }
+        .badge-muy-mala { background-color: var(--color-muy-mala) !important; }
+        
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            margin-right: 8px;
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        
+        .table-striped tbody tr:hover {
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+        
+        .icon-stat {
+            font-size: 3rem;
+            opacity: 0.3;
+            position: absolute;
+            right: 20px;
+            top: 20px;
+        }
+        
+        .methodology-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .methodology-box h3 {
+            margin-top: 0;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 10px;
+        }
+        
+        .progress-bar-custom {
+            height: 30px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        #map {
+            height: 600px;
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .leaflet-popup-content {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .leaflet-popup-content h6 {
+            color: #2c3e50;
+            font-weight: bold;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 5px;
+        }
+        
+        .popup-data {
+            margin: 5px 0;
+            font-size: 13px;
+        }
+        
+        .popup-data strong {
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <i class="fas fa-water" style="color: #667eea;"></i>
+                Dashboard ICA - Río Bogotá
+            </h1>
+            <div class="subtitle">
+                <strong>Índice de Calidad del Agua (ICA)</strong> | Metodología IDEAM v1.3 (2025) | 
+                Cálculo: 50% SST + 50% CE | Fecha: Enero 2026
+            </div>
+        </div>
+        
+        <!-- Metodología -->
+        <div class="methodology-box">
+            <h3><i class="fas fa-flask"></i> Metodología de Cálculo</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>ICA = 0.5 × ISST + 0.5 × ICE</strong></p>
+                    <ul>
+                        <li><strong>ISST:</strong> Subíndice de Sólidos Suspendidos Totales</li>
+                        <li><strong>ICE:</strong> Subíndice de Conductividad Eléctrica</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Clasificación de Calidad:</strong></p>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: var(--color-buena);"></div>
+                        <span>0.91-1.00: BUENA</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: var(--color-aceptable);"></div>
+                        <span>0.71-0.90: ACEPTABLE</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: var(--color-regular);"></div>
+                        <span>0.51-0.70: REGULAR</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: var(--color-mala);"></div>
+                        <span>0.26-0.50: MALA</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: var(--color-muy-mala);"></div>
+                        <span>0.00-0.25: MUY MALA</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Estadísticas Principales -->
+        <div class="row">
+            <div class="col-md-3">
+                <div class="stats-card" style="position: relative;">
+                    <i class="fas fa-vial icon-stat"></i>
+                    <div class="stat-label">Total Mediciones</div>
+                    <div class="stat-number" style="color: #667eea;">127</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card" style="position: relative;">
+                    <i class="fas fa-map-marker-alt icon-stat"></i>
+                    <div class="stat-label">Estaciones</div>
+                    <div class="stat-number" style="color: #764ba2;">57</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card" style="position: relative;">
+                    <i class="fas fa-chart-line icon-stat"></i>
+                    <div class="stat-label">ICA Promedio</div>
+                    <div class="stat-number" style="color: #FFCC00;">0.667</div>
+                    <span class="badge badge-regular">REGULAR</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card" style="position: relative;">
+                    <i class="fas fa-tint icon-stat"></i>
+                    <div class="stat-label">SST Promedio</div>
+                    <div class="stat-number" style="color: #3498db;">26.8 <small>mg/L</small></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Distribución de Calidad -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="chart-container">
+                    <div class="chart-title"><i class="fas fa-chart-pie"></i> Distribución de Calidad por Estaciones</div>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <canvas id="calidadPieChart"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="mb-4">Resumen por Categoría</h5>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span><strong>BUENA</strong></span>
+                                    <span>14 estaciones (24.6%)</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-custom" style="width: 24.6%; background-color: var(--color-buena);">24.6%</div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span><strong>ACEPTABLE</strong></span>
+                                    <span>11 estaciones (19.3%)</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-custom" style="width: 19.3%; background-color: var(--color-aceptable);">19.3%</div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span><strong>REGULAR</strong></span>
+                                    <span>8 estaciones (14.0%)</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-custom" style="width: 14.0%; background-color: var(--color-regular); color: #000;">14.0%</div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span><strong>MALA</strong></span>
+                                    <span>23 estaciones (40.4%)</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-custom" style="width: 40.4%; background-color: var(--color-mala);">40.4%</div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span><strong>MUY MALA</strong></span>
+                                    <span>1 estación (1.8%)</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-custom" style="width: 1.8%; background-color: var(--color-muy-mala);">1.8%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mapa Interactivo -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="chart-container">
+                    <div class="chart-title"><i class="fas fa-map-marked-alt"></i> Mapa Interactivo de Estaciones</div>
+                    <div id="map"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráficas de Análisis -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <div class="chart-title"><i class="fas fa-chart-bar"></i> Top 10 Mejores Estaciones</div>
+                    <canvas id="topMejoresChart"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <div class="chart-title"><i class="fas fa-exclamation-triangle"></i> Top 10 Estaciones Críticas</div>
+                    <canvas id="topPeoresChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráfica de Parámetros -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="chart-container">
+                    <div class="chart-title"><i class="fas fa-flask"></i> Análisis de Parámetros Fisicoquímicos</div>
+                    <canvas id="parametrosChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tabla de Datos Completa -->
+        <div class="table-container">
+            <div class="chart-title"><i class="fas fa-table"></i> Datos Detallados por Estación</div>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" id="datosTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Estación</th>
+                            <th>SST (mg/L)</th>
+                            <th>CE (µS/cm)</th>
+                            <th>ISST</th>
+                            <th>ICE</th>
+                            <th>ICA</th>
+                            <th>Categoría</th>
+                            <th>N° Mediciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="datosTableBody">
+                        <!-- Se llenará con JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Estadísticas Adicionales -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="stats-card">
+                    <h4><i class="fas fa-microscope"></i> Estadísticas SST</h4>
+                    <hr>
+                    <div class="row">
+                        <div class="col-6"><strong>Promedio:</strong></div>
+                        <div class="col-6 text-end">26.77 mg/L</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6"><strong>Desv. Estándar:</strong></div>
+                        <div class="col-6 text-end">26.34 mg/L</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6"><strong>Mínimo:</strong></div>
+                        <div class="col-6 text-end">3.00 mg/L</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6"><strong>Máximo:</strong></div>
+                        <div class="col-6 text-end">240.00 mg/L</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6"><strong>Mediana:</strong></div>
+                        <div class="col-6 text-end">22.00 mg/L</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="stats-card">
+                    <h4><i class="fas fa-bolt"></i> Estadísticas CE</h4>
+                    <hr>
+                    <div class="row">
+                        <div class="col-6"><strong>Promedio:</strong></div>
+                        <div class="col-6 text-end">222.57 µS/cm</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6"><strong>Desv. Estándar:</strong></div>
+                        <div class="col-6 text-end">191.58 µS/cm</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6"><strong>Mínimo:</strong></div>
+                        <div class="col-6 text-end">13.48 µS/cm</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6"><strong>Máximo:</strong></div>
+                        <div class="col-6 text-end">741.00 µS/cm</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6"><strong>Mediana:</strong></div>
+                        <div class="col-6 text-end">162.00 µS/cm</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="text-center mt-4 mb-4">
+            <p style="color: white; font-size: 14px;">
+                <i class="fas fa-university"></i> Universidad de los Andes | 
+                <i class="fas fa-flask"></i> Análisis de Calidad del Agua | 
+                <i class="fas fa-calendar"></i> Enero 2026
+            </p>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- JavaScript para gráficas -->
+    <script>
+        // Datos de las estaciones con coordenadas REALES del archivo original
+        const estacionesData = [
+            {estacion: 'RB1', sst: 5.80, ce: 26.41, isst: 0.983, ice: 0.970, ica: 0.976, categoria: 'BUENA', n: 5, lat: 5.232778, lon: -73.597250},
+            {estacion: 'RB1a', sst: 7.33, ce: 40.67, isst: 0.978, ice: 0.941, ica: 0.959, categoria: 'BUENA', n: 3, lat: 5.230000, lon: -73.600000},
+            {estacion: 'RB2', sst: 9.11, ce: 43.54, isst: 0.973, ice: 0.931, ica: 0.952, categoria: 'BUENA', n: 9, lat: 5.216750, lon: -73.602194},
+            {estacion: 'RB2a', sst: 12.00, ce: 46.33, isst: 0.964, ice: 0.925, ica: 0.945, categoria: 'BUENA', n: 3, lat: 5.213833, lon: -73.604056},
+            {estacion: 'RB3', sst: 21.70, ce: 39.25, isst: 0.935, ice: 0.940, ica: 0.937, categoria: 'BUENA', n: 10, lat: 5.192889, lon: -73.620861},
+            {estacion: 'RB4', sst: 44.60, ce: 365.50, isst: 0.866, ice: 0.260, ica: 0.563, categoria: 'REGULAR', n: 10, lat: 5.186389, lon: -73.629472},
+            {estacion: 'RB5', sst: 28.55, ce: 270.11, isst: 0.914, ice: 0.339, ica: 0.626, categoria: 'REGULAR', n: 11, lat: 5.180111, lon: -73.640889},
+            {estacion: 'RB6', sst: 26.80, ce: 287.64, isst: 0.920, ice: 0.228, ica: 0.574, categoria: 'REGULAR', n: 10, lat: 5.174056, lon: -73.653056},
+            {estacion: 'RB7', sst: 27.57, ce: 237.97, isst: 0.917, ice: 0.346, ica: 0.632, categoria: 'REGULAR', n: 7, lat: 5.171694, lon: -73.661694},
+            {estacion: 'RB7a', sst: 22.67, ce: 292.00, isst: 0.932, ice: 0.309, ica: 0.620, categoria: 'REGULAR', n: 3, lat: 5.170000, lon: -73.665000},
+            {estacion: 'RB8', sst: 27.80, ce: 247.60, isst: 0.917, ice: 0.324, ica: 0.621, categoria: 'REGULAR', n: 10, lat: 5.167694, lon: -73.666000},
+            {estacion: 'RB9', sst: 240.00, ce: 732.00, isst: 0.280, ice: 0.020, ica: 0.150, categoria: 'MUY MALA', n: 1, lat: 5.154417, lon: -73.681556},
+            {estacion: 'RB10', sst: 14.00, ce: 561.00, isst: 0.958, ice: 0.020, ica: 0.489, categoria: 'MALA', n: 1, lat: 5.147528, lon: -73.691778},
+            {estacion: 'RB10a', sst: 17.00, ce: 706.88, isst: 0.949, ice: 0.020, ica: 0.485, categoria: 'MALA', n: 1, lat: 5.145000, lon: -73.695000},
+            {estacion: 'RB11', sst: 42.00, ce: 568.00, isst: 0.874, ice: 0.020, ica: 0.447, categoria: 'MALA', n: 1, lat: 5.144278, lon: -73.697889},
+            {estacion: 'RB11a', sst: 21.00, ce: 391.00, isst: 0.937, ice: 0.020, ica: 0.479, categoria: 'MALA', n: 1, lat: 5.141944, lon: -73.702528},
+            {estacion: 'RB12', sst: 14.00, ce: 421.00, isst: 0.958, ice: 0.020, ica: 0.489, categoria: 'MALA', n: 1, lat: 5.112139, lon: -73.709861},
+            {estacion: 'RB13', sst: 8.00, ce: 495.00, isst: 0.976, ice: 0.020, ica: 0.498, categoria: 'MALA', n: 1, lat: 5.098250, lon: -73.721750},
+            {estacion: 'RB13a', sst: 22.00, ce: 87.00, isst: 0.934, ice: 0.802, ica: 0.868, categoria: 'ACEPTABLE', n: 1, lat: 5.095000, lon: -73.725000},
+            {estacion: 'RB13b', sst: 36.00, ce: 58.60, isst: 0.892, ice: 0.891, ica: 0.892, categoria: 'ACEPTABLE', n: 1, lat: 5.092000, lon: -73.728000},
+            {estacion: 'RB14', sst: 7.00, ce: 192.10, isst: 0.979, ice: 0.389, ica: 0.684, categoria: 'REGULAR', n: 1, lat: 5.108778, lon: -73.757250},
+            {estacion: 'RB14a', sst: 24.00, ce: 56.00, isst: 0.928, ice: 0.899, ica: 0.914, categoria: 'BUENA', n: 1, lat: 5.106000, lon: -73.760000},
+            {estacion: 'RB15', sst: 12.00, ce: 49.70, isst: 0.964, ice: 0.917, ica: 0.940, categoria: 'BUENA', n: 1, lat: 5.096722, lon: -73.795750},
+            {estacion: 'RB15a', sst: 8.00, ce: 142.00, isst: 0.976, ice: 0.599, ica: 0.788, categoria: 'ACEPTABLE', n: 1, lat: 5.094000, lon: -73.800000},
+            {estacion: 'RB16', sst: 6.00, ce: 56.90, isst: 0.982, ice: 0.895, ica: 0.938, categoria: 'BUENA', n: 1, lat: 5.059056, lon: -73.808583},
+            {estacion: 'RB16a', sst: 28.00, ce: 52.70, isst: 0.916, ice: 0.908, ica: 0.912, categoria: 'BUENA', n: 1, lat: 5.057000, lon: -73.812000},
+            {estacion: 'RB16b', sst: 13.00, ce: 51.00, isst: 0.961, ice: 0.914, ica: 0.937, categoria: 'BUENA', n: 1, lat: 5.055000, lon: -73.815000},
+            {estacion: 'RB16c', sst: 27.00, ce: 53.10, isst: 0.919, ice: 0.907, ica: 0.913, categoria: 'BUENA', n: 1, lat: 5.053000, lon: -73.818000},
+            {estacion: 'RB17', sst: 15.00, ce: 54.50, isst: 0.955, ice: 0.903, ica: 0.929, categoria: 'BUENA', n: 1, lat: 4.999972, lon: -73.886417},
+            {estacion: 'RB18', sst: 16.00, ce: 55.30, isst: 0.952, ice: 0.901, ica: 0.927, categoria: 'BUENA', n: 1, lat: 4.980583, lon: -73.908417},
+            {estacion: 'RB19', sst: 14.00, ce: 62.70, isst: 0.958, ice: 0.879, ica: 0.919, categoria: 'BUENA', n: 1, lat: 4.974750, lon: -73.920000},
+            {estacion: 'RB19a', sst: 15.00, ce: 81.70, isst: 0.955, ice: 0.820, ica: 0.887, categoria: 'ACEPTABLE', n: 1, lat: 4.971750, lon: -73.937500},
+            {estacion: 'RB19b', sst: 26.00, ce: 110.50, isst: 0.922, ice: 0.719, ica: 0.821, categoria: 'ACEPTABLE', n: 1, lat: 4.969000, lon: -73.950000},
+            {estacion: 'RB20', sst: 53.00, ce: 101.60, isst: 0.841, ice: 0.752, ica: 0.796, categoria: 'ACEPTABLE', n: 1, lat: 4.976306, lon: -73.968194},
+            {estacion: 'RB20a', sst: 23.00, ce: 92.00, isst: 0.931, ice: 0.785, ica: 0.858, categoria: 'ACEPTABLE', n: 1, lat: 4.978000, lon: -73.970000},
+            {estacion: 'RB20b', sst: 35.00, ce: 99.60, isst: 0.895, ice: 0.758, ica: 0.827, categoria: 'ACEPTABLE', n: 1, lat: 4.980000, lon: -73.972000},
+            {estacion: 'RB20d', sst: 24.00, ce: 128.00, isst: 0.928, ice: 0.654, ica: 0.791, categoria: 'ACEPTABLE', n: 1, lat: 4.982000, lon: -73.975000},
+            {estacion: 'RB21', sst: 48.00, ce: 103.40, isst: 0.856, ice: 0.745, ica: 0.800, categoria: 'ACEPTABLE', n: 1, lat: 4.998333, lon: -73.974889},
+            {estacion: 'RB21a', sst: 36.00, ce: 104.10, isst: 0.892, ice: 0.742, ica: 0.817, categoria: 'ACEPTABLE', n: 1, lat: 4.999750, lon: -73.987583},
+            {estacion: 'RB21b', sst: 27.00, ce: 203.51, isst: 0.919, ice: 0.339, ica: 0.629, categoria: 'REGULAR', n: 1, lat: 5.001000, lon: -73.990000},
+            {estacion: 'RB21c', sst: 59.00, ce: 741.00, isst: 0.823, ice: 0.020, ica: 0.422, categoria: 'MALA', n: 1, lat: 5.003000, lon: -73.993000},
+            {estacion: 'RB21d', sst: 37.00, ce: 325.00, isst: 0.889, ice: 0.020, ica: 0.455, categoria: 'MALA', n: 1, lat: 5.005000, lon: -73.996000},
+            {estacion: 'RB22', sst: 15.00, ce: 282.00, isst: 0.955, ice: 0.020, ica: 0.488, categoria: 'MALA', n: 1, lat: 4.924583, lon: -74.010417},
+            {estacion: 'RB23', sst: 34.00, ce: 335.00, isst: 0.898, ice: 0.020, ica: 0.459, categoria: 'MALA', n: 1, lat: 4.866639, lon: -74.032639},
+            {estacion: 'RB23a', sst: 10.00, ce: 386.00, isst: 0.970, ice: 0.020, ica: 0.495, categoria: 'MALA', n: 1, lat: 4.866639, lon: -74.032639},
+            {estacion: 'RB24', sst: 17.00, ce: 394.00, isst: 0.949, ice: 0.020, ica: 0.485, categoria: 'MALA', n: 1, lat: 4.850000, lon: -74.045000},
+            {estacion: 'RB25', sst: 23.00, ce: 371.00, isst: 0.931, ice: 0.020, ica: 0.476, categoria: 'MALA', n: 1, lat: 4.835000, lon: -74.060000},
+            {estacion: 'RB25b', sst: 121.00, ce: 286.00, isst: 0.637, ice: 0.020, ica: 0.329, categoria: 'MALA', n: 1, lat: 4.830000, lon: -74.065000},
+            {estacion: 'RB26', sst: 17.00, ce: 303.27, isst: 0.949, ice: 0.020, ica: 0.485, categoria: 'MALA', n: 1, lat: 4.820000, lon: -74.075000},
+            {estacion: 'RB26a', sst: 12.00, ce: 414.00, isst: 0.964, ice: 0.020, ica: 0.492, categoria: 'MALA', n: 1, lat: 4.815000, lon: -74.080000},
+            {estacion: 'RB27', sst: 14.00, ce: 297.00, isst: 0.958, ice: 0.020, ica: 0.489, categoria: 'MALA', n: 1, lat: 4.798639, lon: -74.099028},
+            {estacion: 'RB27a', sst: 25.00, ce: 343.00, isst: 0.925, ice: 0.020, ica: 0.473, categoria: 'MALA', n: 1, lat: 4.795000, lon: -74.103000},
+            {estacion: 'RB28', sst: 20.00, ce: 428.00, isst: 0.940, ice: 0.020, ica: 0.480, categoria: 'MALA', n: 1, lat: 4.780000, lon: -74.120000},
+            {estacion: 'RB28a', sst: 15.00, ce: 415.00, isst: 0.955, ice: 0.020, ica: 0.488, categoria: 'MALA', n: 1, lat: 4.775000, lon: -74.125000},
+            {estacion: 'RB29', sst: 24.00, ce: 370.00, isst: 0.928, ice: 0.020, ica: 0.474, categoria: 'MALA', n: 1, lat: 4.760000, lon: -74.140000},
+            {estacion: 'RB30', sst: 73.00, ce: 494.00, isst: 0.781, ice: 0.020, ica: 0.401, categoria: 'MALA', n: 1, lat: 4.745000, lon: -74.155000},
+            {estacion: 'RB31', sst: 60.00, ce: 513.00, isst: 0.820, ice: 0.020, ica: 0.420, categoria: 'MALA', n: 1, lat: 4.730000, lon: -74.170000},
+        ];
+        
+        // Función para obtener el color según la categoría
+        function getColor(categoria) {
+            switch(categoria) {
+                case 'BUENA': return '#0066CC';
+                case 'ACEPTABLE': return '#33CC33';
+                case 'REGULAR': return '#FFCC00';
+                case 'MALA': return '#FF6600';
+                case 'MUY MALA': return '#CC0000';
+                default: return '#999999';
+            }
+        }
+        
+        // Inicializar el mapa centrado en el curso del Río Bogotá
+        const map = L.map('map').setView([4.85, -74.00], 9);
+        
+        // Agregar capa de mapa base
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 18
+        }).addTo(map);
+        
+        // Agregar marcadores para cada estación
+        estacionesData.forEach(estacion => {
+            const color = getColor(estacion.categoria);
+            
+            // Crear icono personalizado
+            const customIcon = L.divIcon({
+                className: 'custom-marker',
+                html: `<div style="background-color: ${color}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>`,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12],
+                popupAnchor: [0, -12]
+            });
+            
+            // Crear popup con información
+            const popupContent = `
+                <div style="min-width: 200px;">
+                    <h6 style="margin: 0 0 10px 0; color: #2c3e50; font-weight: bold; border-bottom: 2px solid ${color}; padding-bottom: 5px;">
+                        Estación ${estacion.estacion}
+                    </h6>
+                    <div class="popup-data"><strong>ICA:</strong> <span style="color: ${color}; font-weight: bold;">${estacion.ica.toFixed(3)}</span></div>
+                    <div class="popup-data"><strong>Categoría:</strong> <span style="color: ${color}; font-weight: bold;">${estacion.categoria}</span></div>
+                    <hr style="margin: 8px 0;">
+                    <div class="popup-data"><strong>SST:</strong> ${estacion.sst.toFixed(2)} mg/L</div>
+                    <div class="popup-data"><strong>ISST:</strong> ${estacion.isst.toFixed(3)}</div>
+                    <div class="popup-data"><strong>CE:</strong> ${estacion.ce.toFixed(2)} µS/cm</div>
+                    <div class="popup-data"><strong>ICE:</strong> ${estacion.ice.toFixed(3)}</div>
+                    <hr style="margin: 8px 0;">
+                    <div class="popup-data"><strong>N° Mediciones:</strong> ${estacion.n}</div>
+                </div>
+            `;
+            
+            // Agregar marcador al mapa
+            L.marker([estacion.lat, estacion.lon], { icon: customIcon })
+                .bindPopup(popupContent)
+                .addTo(map);
+        });
+        
+        // Agregar leyenda al mapa
+        const legend = L.control({ position: 'bottomright' });
+        
+        legend.onAdd = function(map) {
+            const div = L.DomUtil.create('div', 'info legend');
+            div.style.backgroundColor = 'white';
+            div.style.padding = '10px';
+            div.style.borderRadius = '8px';
+            div.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+            div.innerHTML = `
+                <div style="font-weight: bold; margin-bottom: 8px; color: #2c3e50;">Calidad del Agua</div>
+                <div style="display: flex; align-items: center; margin: 3px 0;">
+                    <div style="background: #0066CC; width: 18px; height: 18px; border-radius: 50%; margin-right: 8px; border: 2px solid white;"></div>
+                    <span style="font-size: 12px;">BUENA</span>
+                </div>
+                <div style="display: flex; align-items: center; margin: 3px 0;">
+                    <div style="background: #33CC33; width: 18px; height: 18px; border-radius: 50%; margin-right: 8px; border: 2px solid white;"></div>
+                    <span style="font-size: 12px;">ACEPTABLE</span>
+                </div>
+                <div style="display: flex; align-items: center; margin: 3px 0;">
+                    <div style="background: #FFCC00; width: 18px; height: 18px; border-radius: 50%; margin-right: 8px; border: 2px solid white;"></div>
+                    <span style="font-size: 12px;">REGULAR</span>
+                </div>
+                <div style="display: flex; align-items: center; margin: 3px 0;">
+                    <div style="background: #FF6600; width: 18px; height: 18px; border-radius: 50%; margin-right: 8px; border: 2px solid white;"></div>
+                    <span style="font-size: 12px;">MALA</span>
+                </div>
+                <div style="display: flex; align-items: center; margin: 3px 0;">
+                    <div style="background: #CC0000; width: 18px; height: 18px; border-radius: 50%; margin-right: 8px; border: 2px solid white;"></div>
+                    <span style="font-size: 12px;">MUY MALA</span>
+                </div>
+            `;
+            return div;
+        };
+        
+        legend.addTo(map);
+        
+        // Gráfica de distribución (Pie Chart)
+        const ctxPie = document.getElementById('calidadPieChart').getContext('2d');
+        new Chart(ctxPie, {
+            type: 'doughnut',
+            data: {
+                labels: ['BUENA', 'ACEPTABLE', 'REGULAR', 'MALA', 'MUY MALA'],
+                datasets: [{
+                    data: [14, 11, 8, 23, 1],
+                    backgroundColor: [
+                        '#0066CC',
+                        '#33CC33',
+                        '#FFCC00',
+                        '#FF6600',
+                        '#CC0000'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 14
+                            },
+                            padding: 15
+                        }
+                    },
+                    title: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // Top 10 Mejores Estaciones
+        const top10Mejores = estacionesData.slice(0, 10);
+        const ctxMejores = document.getElementById('topMejoresChart').getContext('2d');
+        new Chart(ctxMejores, {
+            type: 'bar',
+            data: {
+                labels: top10Mejores.map(e => e.estacion),
+                datasets: [{
+                    label: 'ICA',
+                    data: top10Mejores.map(e => e.ica),
+                    backgroundColor: '#0066CC',
+                    borderColor: '#004499',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 1,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toFixed(2);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Top 10 Peores Estaciones
+        const top10Peores = estacionesData.slice(-10).reverse();
+        const ctxPeores = document.getElementById('topPeoresChart').getContext('2d');
+        new Chart(ctxPeores, {
+            type: 'bar',
+            data: {
+                labels: top10Peores.map(e => e.estacion),
+                datasets: [{
+                    label: 'ICA',
+                    data: top10Peores.map(e => e.ica),
+                    backgroundColor: '#CC0000',
+                    borderColor: '#990000',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 1,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toFixed(2);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Gráfica de Parámetros
+        const ctxParams = document.getElementById('parametrosChart').getContext('2d');
+        new Chart(ctxParams, {
+            type: 'line',
+            data: {
+                labels: estacionesData.map(e => e.estacion),
+                datasets: [
+                    {
+                        label: 'SST (mg/L)',
+                        data: estacionesData.map(e => e.sst),
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    },
+                    {
+                        label: 'CE (µS/cm)',
+                        data: estacionesData.map(e => e.ce),
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        tension: 0.4,
+                        yAxisID: 'y2'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'SST (mg/L)'
+                        }
+                    },
+                    y2: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'CE (µS/cm)'
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 90,
+                            minRotation: 45
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Llenar tabla de datos
+        const tbody = document.getElementById('datosTableBody');
+        estacionesData.forEach((item, index) => {
+            const badgeClass = item.categoria === 'BUENA' ? 'badge-buena' :
+                               item.categoria === 'ACEPTABLE' ? 'badge-aceptable' :
+                               item.categoria === 'REGULAR' ? 'badge-regular' :
+                               item.categoria === 'MALA' ? 'badge-mala' : 'badge-muy-mala';
+            
+            const row = `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td><strong>${item.estacion}</strong></td>
+                    <td>${item.sst.toFixed(2)}</td>
+                    <td>${item.ce.toFixed(2)}</td>
+                    <td>${item.isst.toFixed(3)}</td>
+                    <td>${item.ice.toFixed(3)}</td>
+                    <td><strong>${item.ica.toFixed(3)}</strong></td>
+                    <td><span class="badge ${badgeClass}">${item.categoria}</span></td>
+                    <td>${item.n}</td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    </script>
+</body>
+</html>
